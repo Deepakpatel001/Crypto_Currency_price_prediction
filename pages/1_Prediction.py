@@ -1,10 +1,7 @@
 import streamlit as st
-import plotly.express as px
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import datetime
-import os
 import math
 import warnings
 warnings.filterwarnings('ignore')
@@ -19,12 +16,9 @@ def Xgboost(coin,pred_days_input):
     from itertools import cycle
 
 
-    from xgboost import XGBRegressor
-    from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
-    from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance, accuracy_score
+    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
     from sklearn.preprocessing import MinMaxScaler
 
-    from plotly.offline import plot, iplot, init_notebook_mode
 
     # In[3]:
 
@@ -188,7 +182,6 @@ def Xgboost(coin,pred_days_input):
     temp_input = list(x_input)
     temp_input = temp_input[0].tolist()
 
-    from numpy import array
 
     lst_output = []
     n_steps = time_step
@@ -269,12 +262,9 @@ def Xgboost(coin,pred_days_input):
 def Lstm(coin,pred_days_input):
     st.write("LSTM running with " , coin, pred_days_input)
 
-    import os
     import pandas as pd
     import numpy as np
     import math
-    import datetime as dt
-    import matplotlib.pyplot as plt
 
     # For Evalution we will use these library
 
@@ -291,11 +281,7 @@ def Lstm(coin,pred_days_input):
 
     # For PLotting we will use these library
 
-    import matplotlib.pyplot as plt
     from itertools import cycle
-    import plotly.graph_objects as go
-    import plotly.express as px
-    from plotly.subplots import make_subplots
 
     maindf = pd.read_csv(f'.\Dataset\Gemini_{coin}_1h.csv', skiprows=1)
 
@@ -389,7 +375,6 @@ def Lstm(coin,pred_days_input):
 
     """# Actuall Model Building"""
 
-    import matplotlib.pyplot as plt
 
     from tensorflow.keras.models import load_model as tfk__load_model
     model = tfk__load_model(f'.\Models\{coin}_LSTM.h5')
@@ -471,7 +456,6 @@ def Lstm(coin,pred_days_input):
     temp_input = list(x_input)
     temp_input = temp_input[0].tolist()
 
-    from numpy import array
 
     lst_output = []
     n_steps = time_step
