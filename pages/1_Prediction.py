@@ -4,25 +4,22 @@ import pandas as pd
 import datetime
 import math
 import warnings
+
 warnings.filterwarnings('ignore')
 
 
-
-def Xgboost(coin,pred_days_input):
-    st.write("Xgboost running with ", coin, pred_days_input)
-    import warnings
-    warnings.filterwarnings('ignore')
-
+def Xgboost(coin, pred_days_input):
     from itertools import cycle
-
-
     from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
     from sklearn.preprocessing import MinMaxScaler
 
+    df = pd.read_csv(f".//Dataset//Gemini_{coin}_1h.csv", skiprows=1)
 
-    # In[3]:
+    day_df = pd.read_csv(f'.//Dataset//day_wise//Gemini_{coin}_d.csv', skiprows=1)
 
-    df = pd.read_csv(f".\Dataset\Gemini_{coin}_1h.csv", skiprows=1)
+    st.subheader(f'Graph and prediction for the particular {coin}')
+    st.subheader(f"Gemini {coin} Coin ")
+    st.line_chart(data=day_df, x='date', y='close', width=300, height=400)
     df = df.iloc[::-1].reset_index()
     df = df[['date', 'close']]
     df_close = df.copy()
@@ -32,13 +29,10 @@ def Xgboost(coin,pred_days_input):
     last_date = last_date.date.values
     last_date = datetime.datetime.strptime(last_date[0], '%Y-%m-%d %H:%M:%S')
     last_date = last_date.date()
-    st.write(last_date,"last_date")
-    st.write(pred_days_input,"pred Date")
 
     pred_days_input = pred_days_input.date() - last_date
     pred_days_input = pred_days_input.days
     st.write(pred_days_input, "pred Date")
-    # In[14]:
 
     scaler = MinMaxScaler(feature_range=(0, 1))
     df_close = scaler.fit_transform(np.array(df_close).reshape(-1, 1))
@@ -70,11 +64,6 @@ def Xgboost(coin,pred_days_input):
     X_train, y_train = create_dataset(train_data, time_step)
     X_test, y_test = create_dataset(test_data, time_step)
 
-    print("X_train: ", X_train.shape)
-    print("y_train: ", y_train.shape)
-    print("X_test: ", X_test.shape)
-    print("y_test", y_test.shape)
-
     # In[19]:
 
     # # Biulding Model
@@ -82,24 +71,13 @@ def Xgboost(coin,pred_days_input):
     # my_model.fit(X_train, y_train, verbose=False)
 
     # In[20]:
-
+    st.subheader("Actual Model Building")
     import pickle
-    # filename = 'BTCUSD_xgboost.pkl'
-    # pickle.dump(my_model, open(filename, 'wb'))
 
-    # In[21]:
-
-    # del my_model
-
-    # my_model
-
-    # In[22]:
-
-    file = open(f'.\Models\{coin}_xgboost.pkl', 'rb')
+    file = open(f'.//Models//{coin}_xgboost.pkl', 'rb')
 
     # dump information to that file
     my_model = pickle.load(file)
-
 
     # In[24]:
 
@@ -107,6 +85,8 @@ def Xgboost(coin,pred_days_input):
     print("Mean Absolute Error - MAE : " + str(mean_absolute_error(y_test, predictions)))
     print("Root Mean squared Error - RMSE : " + str(math.sqrt(mean_squared_error(y_test, predictions))))
 
+    Test_MAE = mean_absolute_error(y_test, predictions)
+    Test_RMSE = math.sqrt(mean_squared_error(y_test, predictions))
     # In[25]:
 
     train_predict = my_model.predict(X_train)
@@ -149,6 +129,8 @@ def Xgboost(coin,pred_days_input):
 
     print("Train data R2 score:", r2_score(original_ytrain, train_predict))
     print("Test data R2 score:", r2_score(original_ytest, test_predict))
+    Train_R2 = r2_score(original_ytrain, train_predict)
+    Test_R2 = r2_score(original_ytest, test_predict)
 
     # In[30]:
 
@@ -176,12 +158,22 @@ def Xgboost(coin,pred_days_input):
 
     st.line_chart(new_new)
 
+    st.subheader("Report:")
+
+    df = pd.DataFrame(
+        {
+            "Test RMSE": Test_RMSE,
+            "Train R2": Train_R2,
+            "Test R2": Test_R2
+
+        }, index=[0]
+    )
+
     # In[31]:
 
     x_input = test_data[len(test_data) - time_step:].reshape(1, -1)
     temp_input = list(x_input)
     temp_input = temp_input[0].tolist()
-
 
     lst_output = []
     n_steps = time_step
@@ -212,10 +204,6 @@ def Xgboost(coin,pred_days_input):
             i = i + 1
 
     print("Output of predicted next days: ", len(lst_output))
-
-    # In[ ]:
-
-    # In[32]:
 
     last_days = np.arange(1, time_step + 1)
     day_pred = np.arange(time_step + 1, time_step + pred_days + 1)
@@ -251,39 +239,36 @@ def Xgboost(coin,pred_days_input):
     # fig.update_yaxes(showgrid=False)
     # fig.show()
     # st.pyplot(fig)
-
-    # st.dataframe(new_pred_plot)
-    print("end here")
+    st.subheader("Predicted Graph")
+    pred_close = new_pred_plot.tail(1)['next_predicted_days_value']
+    st.write("Close Price: $" + str(pred_close.values))
     st.line_chart(new_pred_plot)
 
     st.write()
 
 
-def Lstm(coin,pred_days_input):
-    st.write("LSTM running with " , coin, pred_days_input)
-
-    import pandas as pd
-    import numpy as np
+def Lstm(coin, pred_days_input):
     import math
 
     # For Evalution we will use these library
 
     from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
-    from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance, accuracy_score
+    from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance
     from sklearn.preprocessing import MinMaxScaler
 
     # For model building we will use these library
-
-    import tensorflow as tf
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import Dense, Dropout
-    from tensorflow.keras.layers import LSTM
 
     # For PLotting we will use these library
 
     from itertools import cycle
 
-    maindf = pd.read_csv(f'.\Dataset\Gemini_{coin}_1h.csv', skiprows=1)
+    maindf = pd.read_csv(f'.//Dataset//Gemini_{coin}_1h.csv', skiprows=1)
+
+    df = pd.read_csv(f'.//Dataset//day_wise//Gemini_{coin}_d.csv', skiprows=1)
+
+    st.subheader(f'Graph and prediction for the particular {coin}')
+    st.subheader(f"Gemini {coin} Coin ")
+    st.line_chart(data=df, x='date', y='close', width=300, height=400)
 
     maindf = maindf.iloc[::-1].reset_index(drop=True)
 
@@ -291,11 +276,8 @@ def Lstm(coin,pred_days_input):
     last_date = last_date.date.values
     last_date = datetime.datetime.strptime(last_date[0], '%Y-%m-%d %H:%M:%S')
     last_date = last_date.date()
-    st.write(last_date, "last_date")
-    st.write(pred_days_input, "pred Date")
     pred_days_input = pred_days_input.date() - last_date
     pred_days_input = pred_days_input.days
-    st.write(pred_days_input, "pred Date")
 
     maindf['date'] = pd.to_datetime(maindf['date'], format='%Y-%m-%d %H:%M:%S')
 
@@ -308,7 +290,6 @@ def Lstm(coin,pred_days_input):
     new_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
                  'September', 'October', 'November', 'December']
     monthwise = monthwise.reindex(new_order, axis=0)
-    monthwise
 
     closedf = maindf[['date', 'close']]
     print("Shape of close dataframe:", closedf.shape)
@@ -325,8 +306,6 @@ def Lstm(coin,pred_days_input):
     close_stock = closedf.copy()
     print("Total data for prediction: ", closedf.shape[0])
     # only for 2 years
-
-    closedf
 
     # fig = px.line(closedf, x=closedf.date, y=closedf.close, labels={'date': 'date', 'close': 'close Stock'})
     # fig.update_traces(marker_line_width=2, opacity=0.8, marker_line_color='orange')
@@ -361,11 +340,6 @@ def Lstm(coin,pred_days_input):
     X_train, y_train = create_dataset(train_data, time_step)
     X_test, y_test = create_dataset(test_data, time_step)
 
-    print("X_train: ", X_train.shape)
-    print("y_train: ", y_train.shape)
-    print("X_test: ", X_test.shape)
-    print("y_test", y_test.shape)
-
     # reshape input to be [samples, time steps, features] which is required for LSTM
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
@@ -373,16 +347,14 @@ def Lstm(coin,pred_days_input):
     print("X_train: ", X_train.shape)
     print("X_test: ", X_test.shape)
 
-    """# Actuall Model Building"""
-
+    st.subheader("Actual Model Building")
 
     from tensorflow.keras.models import load_model as tfk__load_model
-    model = tfk__load_model(f'.\Models\{coin}_LSTM.h5')
+    model = tfk__load_model(f'.//Models//{coin}_LSTM.h5')
 
     ### Lets Do the prediction and check performance metrics
     train_predict = model.predict(X_train)
     test_predict = model.predict(X_test)
-    train_predict.shape, test_predict.shape
 
     # Transform back to original form
 
@@ -392,26 +364,32 @@ def Lstm(coin,pred_days_input):
     original_ytest = scaler.inverse_transform(y_test.reshape(-1, 1))
 
     # Evaluation metrices RMSE and MAE
-    print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain, train_predict)))
-    print("Train data MSE: ", mean_squared_error(original_ytrain, train_predict))
-    print("Train data MAE: ", mean_absolute_error(original_ytrain, train_predict))
-    print("-------------------------------------------------------------------------------------")
-    print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest, test_predict)))
-    print("Test data MSE: ", mean_squared_error(original_ytest, test_predict))
-    print("Test data MAE: ", mean_absolute_error(original_ytest, test_predict))
+    Train_RMSE = math.sqrt(mean_squared_error(original_ytrain, train_predict))
+    Train_MSE = mean_squared_error(original_ytrain, train_predict)
+    Train_MEA = mean_absolute_error(original_ytrain, train_predict)
 
+    Test_RMSE = math.sqrt(mean_squared_error(original_ytest, test_predict))
+    Test_MSE = mean_squared_error(original_ytest, test_predict)
+    Test_MEA = mean_absolute_error(original_ytest, test_predict)
+
+    Train_VAR_REG_Score = explained_variance_score(original_ytrain, train_predict)
+    Test_VAR_REG_Score = explained_variance_score(original_ytest, test_predict)
     print("Train data explained variance regression score:",
           explained_variance_score(original_ytrain, train_predict))
     print("Test data explained variance regression score:",
           explained_variance_score(original_ytest, test_predict))
-
+    Train_R2 = r2_score(original_ytrain, train_predict)
+    Test_R2 = r2_score(original_ytest, test_predict)
     ## R square score for regression
     print("Train data R2 score:", r2_score(original_ytrain, train_predict))
     print("Test data R2 score:", r2_score(original_ytest, test_predict))
-
+    Train_MGD = mean_gamma_deviance(original_ytrain, train_predict)
+    Test_MGD = mean_gamma_deviance(original_ytest, test_predict)
     print("Train data MGD: ", mean_gamma_deviance(original_ytrain, train_predict))
     print("Test data MGD: ", mean_gamma_deviance(original_ytest, test_predict))
     print("----------------------------------------------------------------------")
+    Train_MPD = mean_poisson_deviance(original_ytrain, train_predict)
+    Test_MPD = mean_poisson_deviance(original_ytest, test_predict)
     print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
     print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
 
@@ -423,13 +401,11 @@ def Lstm(coin,pred_days_input):
     trainPredictPlot = np.empty_like(closedf)
     trainPredictPlot[:, :] = np.nan
     trainPredictPlot[look_back:len(train_predict) + look_back, :] = train_predict
-    print("Train predicted data: ", trainPredictPlot.shape)
 
     # shift test predictions for plotting
     testPredictPlot = np.empty_like(closedf)
     testPredictPlot[:, :] = np.nan
     testPredictPlot[len(train_predict) + (look_back * 2) + 1:len(closedf) - 1, :] = test_predict
-    print("Test predicted data: ", testPredictPlot.shape)
 
     names = cycle(['Original close price', 'Train predicted close price', 'Test predicted close price'])
 
@@ -448,14 +424,32 @@ def Lstm(coin,pred_days_input):
     # fig.update_xaxes(showgrid=False)
     # fig.update_yaxes(showgrid=False)
     # fig.show()
-    st.dataframe(plotdf)
-    new_plot_df1 = plotdf.drop('date',axis=1)
+    new_plot_df1 = plotdf.drop('date', axis=1)
     st.line_chart(new_plot_df1)
+    st.subheader("Report:")
 
+    df = pd.DataFrame(
+        {
+            "Train RMSE": Train_RMSE,
+            "Test RMSE": Test_RMSE,
+            "Train MSE": Train_MSE,
+            "Test MSE": Test_MSE,
+            "Train R2": Train_R2,
+            "Test R2": Test_R2,
+            "Train MPD": Train_MPD,
+            "Test MPD": Test_MPD,
+            "Train MEA": Train_MEA,
+            "Test MEA": Test_MEA
+
+        }, index=[0]
+    )
+    st.dataframe(
+        df,
+        hide_index=True,
+    )
     x_input = test_data[len(test_data) - time_step:].reshape(1, -1)
     temp_input = list(x_input)
     temp_input = temp_input[0].tolist()
-
 
     lst_output = []
     n_steps = time_step
@@ -488,12 +482,8 @@ def Lstm(coin,pred_days_input):
             lst_output.extend(yhat.tolist())
             i = i + 1
 
-    print("Output of predicted next days: ", len(lst_output))
-
     last_days = np.arange(1, time_step + 1)
     day_pred = np.arange(time_step + 1, time_step + pred_days + 1)
-    print(last_days)
-    print(day_pred)
 
     temp_mat = np.empty((len(last_days) + pred_days + 1, 1))
     temp_mat[:] = np.nan
@@ -524,7 +514,9 @@ def Lstm(coin,pred_days_input):
     # fig.update_xaxes(showgrid=False)
     # fig.update_yaxes(showgrid=False)
     # fig.show()
-
+    st.subheader("Predicted Graph: ")
+    pred_close = new_pred_plot.tail(1)['next_predicted_days_value']
+    st.write("Close Price: $" + str(pred_close.values))
     st.line_chart(new_pred_plot)
 
     # lstmdf=closedf.tolist()
@@ -542,31 +534,19 @@ def Lstm(coin,pred_days_input):
     # fig.update_xaxes(showgrid=False)
     # fig.update_yaxes(showgrid=False)
     # fig.show()
+    print("Prediction Complete")
 
 
-st.set_page_config(page_title="Crypto Currency Prediction",page_icon = ":chart_with_upwards_trend",layout="wide")
+st.set_page_config(page_title="Crypto Currency Prediction", page_icon=":chart_with_upwards_trend", layout="wide")
 st.title(" :chart_with_upwards_trend: Crypto Currency Prediction")
 
-st.markdown('<style>div.block-container{padding-top:1rem;}</style>',unsafe_allow_html=True)
+st.markdown('<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
 
-# browsering the files ----------------------------------------------
-# f1 = st.file_uploader(":file folder: Upload a file",type = (["csv","xlsx","txt","xls"]))
-# if f1 is not None:
-#     filename = f1.name
-#     st.write(filename)
-#     df = pd.read_csv(filename)
-# else:
-#     os.chdir(r"E:\MumBaiKharGhar\Major Project DBDA\Project\MajorProject")
-#     df = pd.read_csv("Gemini_BTCUSD_d.csv",skiprows=1)
-# ---------------------------------------------------------------------------------------
-
-# --------------------------------------------------------------
-
-col1,col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 with col1:
     option = st.selectbox(
-    'Select the type of the coin',
-    ('BTCUSD', 'ETHUSD', 'DOGEUSD', 'LTCUSD'))
+        'Select the type of the coin',
+        ('BTCUSD', 'ETHUSD', 'DOGEUSD', 'LTCUSD'))
 with col2:
     option2 = st.selectbox(
         'Select the type of the coin',
@@ -579,43 +559,8 @@ with col3:
 # pred_days = date2.day- datetime.date.today().day
 # st.write(pred_days)
 
-st.write(option)
-st.write(option2)
 if st.button("Predict"):
     if option2 == 'LSTM':
         Lstm(option, date2)
     elif option2 == 'XGBoost':
-        Xgboost(option,date2)
-
-
-
-
-    st.write('You selected:', option)
-# ---------------------------------------------------------------
-    df = pd.read_csv(".\Dataset\Gemini_BTCUSD_1h.csv",skiprows=1)
-
-    btn_col1,btn_col2 = st.columns((2))
-    with btn_col1:
-        st.write('Graph and prediction for the particular bitcoin')
-        st.subheader("Gemini Bitcoin Coin ")
-        st.line_chart(data=df, x='date', y='close', width=300, height=400)
-
-    with btn_col2:
-        df = pd.DataFrame(
-            {
-                "name": ["Accuracy", "Precision", "Recall", "F1 Score", "RMSE", "MES"],
-                "Values": [9.6757, 7.6567, 5.552, 9.6757, 7.6567, 5.552]
-            }
-        )
-        st.dataframe(
-            df,
-            column_config={
-                "name": "Prediction",
-                "Values": "Values"
-            },
-            hide_index=True,
-        )
-        # Xgboost()
-else:
-    st.write('Something went wrong!')
-
+        Xgboost(option, date2)

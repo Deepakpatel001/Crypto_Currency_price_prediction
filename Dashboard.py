@@ -19,11 +19,18 @@ st.markdown('<style>div.block-container{padding-top:1rem;}</style>',unsafe_allow
 #     df = pd.read_csv("Gemini_BTCUSD_1h.csv",skiprows=1)
 # ---------------------------------------------------------------------------------------
 
-df1 = pd.read_csv(".\Dataset\Gemini_BTCUSD_1h.csv",skiprows=1)
-df2 = pd.read_csv(".\Dataset\Gemini_ETHUSD_1h.csv",skiprows=1)
-df3 = pd.read_csv(".\Dataset\Gemini_DOGEUSD_1h.csv",skiprows=1)
-df4 = pd.read_csv(".\Dataset\Gemini_LTCUSD_1h.csv",skiprows=1)
+df1 = pd.read_csv(".//Dataset//day_wise//Gemini_BTCUSD_d.csv",skiprows=1)
+df2 = pd.read_csv(".//Dataset//day_wise//Gemini_ETHUSD_d.csv",skiprows=1)
+df3 = pd.read_csv(".//Dataset//day_wise//Gemini_DOGEUSD_d.csv",skiprows=1)
+df4 = pd.read_csv(".//Dataset//day_wise//Gemini_LTCUSD_d.csv",skiprows=1)
 
+# get latest data
+# ---------------------------------------------------------------
+BTC_close = df1.head(1)['close']
+ETH_close = df2.head(1)['close']
+DOGE_close = df3.head(1)['close']
+LTC_close = df4.head(1)['close']
+# ---------------------------------------------------------------
 
 # col1,col2 = st.columns((2))
 # df["date"] = pd.to_datetime(df["date"])
@@ -37,21 +44,20 @@ df4 = pd.read_csv(".\Dataset\Gemini_LTCUSD_1h.csv",skiprows=1)
 #     date2 = pd.to_datetime(st.date_input("End Date",endDate))
 # -------------------------------------------------------------------------
 
-col1, col2= st.columns([2, 2])
-data = np.random.randn(5, 5)
+st.subheader("Gemini BTCUSD Coin ")
+st.text("Close Price "+"$ "+str(BTC_close[0]))
+st.line_chart(data=df1,x='date',y='close',width=200, height=500)
+st.subheader("Gemini ETHUSD Coin ")
+st.text("Close Price "+"$ "+str(ETH_close[0]))
+st.line_chart(data=df2,x='date',y='close',width=200, height=500)
 
-col1.subheader("Gemini Bitcoin Coin ")
-col1.line_chart(data=df1,x='date',y='close',width=200, height=500)
-col2.subheader("Gemini Bitcoin Coin ")
-col2.line_chart(data=df2,x='date',y='close',width=200, height=500)
 
-col3, col4= st.columns([2, 2])
-data = np.random.randn(5, 5)
-
-col3.subheader("Gemini Bitcoin Coin ")
-col3.line_chart(data=df3,x='date',y='close',width=200, height=500)
-col4.subheader("Gemini Bitcoin Coin ")
-col4.line_chart(data=df4,x='date',y='close',width=200, height=500)
+st.subheader("Gemini DOGEUSD Coin ")
+st.text("Close Price "+"$ "+str(DOGE_close[0]))
+st.line_chart(data=df3,x='date',y='close', width=200, height=500)
+st.subheader("Gemini DOGEUSD Coin ")
+st.text("Close Price "+"$ "+str(DOGE_close[0]))
+st.line_chart(data=df4,x='date',y='close',width=200, height=500)
 
 
 # col3.subheader("Gemini Bitcoin Coin ")
